@@ -21,7 +21,7 @@ mkdir "$OUTDIR"
 
 echo "begin='$(date -Iseconds)'" >>"$OUTDIR/meta.toml"
 
-TMPDIR=$(mktemp -d)
+TDIR=$(mktemp -d)
 
 if [ -z "$USE_DOMCOP" ]; then
 	# by default use the Tranco Top 1 Million list
@@ -31,25 +31,25 @@ if [ -z "$USE_DOMCOP" ]; then
 
 	TURL="https://tranco-list.eu/download/daily/tranco_${TRANCOID}-1m.csv.zip"
 	curl -s "$TURL" \
-		>"$TMPDIR/tranco.zip"
+		>"$TDIR/tranco.zip"
 
-	unzip -q -d "$TMPDIR" "$TMPDIR/tranco.zip"
+	unzip -q -d "$TDIR" "$TDIR/tranco.zip"
 
-	sed -e 's:\r$::g' -e 's:^[0-9]*,::g' "$TMPDIR/top-1m.csv" \
-		>"$TMPDIR/dom.txt"
+	sed -e 's:\r$::g' -e 's:^[0-9]*,::g' "$TDIR/top-1m.csv" \
+		>"$TDIR/dom.txt"
 else
 	echo "toplist='DomCop'" >>"$OUTDIR/meta.toml"
 	curl -s https://www.domcop.com/files/top/top10milliondomains.csv.zip \
-		>"$TMPDIR/top10milliondomains.csv.zip"
-	unzip -q -d "$TMPDIR" "$TMPDIR/top10milliondomains.csv.zip"
+		>"$TDIR/top10milliondomains.csv.zip"
+	unzip -q -d "$TDIR" "$TDIR/top10milliondomains.csv.zip"
 
-	tail -n +2 "$TMPDIR/top10milliondomains.csv" |
+	tail -n +2 "$TDIR/top10milliondomains.csv" |
 		sed -e 's:^"[0-9]*","::g' -e 's:".*::g' \
-			>"$TMPDIR/dom.txt"
+			>"$TDIR/dom.txt"
 fi
 
 mkdir "$OUTDIR/keys"
-parallel -a "$TMPDIR/dom.txt" -n 15 -j 100 --timeout 300 \
+parallel -a "$TDIR/dom.txt" -n 15 -j 100 --timeout 300 \
 	"$MYDIR/getdnskeys" -p -o "$OUTDIR/keys"
 
 find "$OUTDIR/keys" -type f -exec badkeys --dnssec {} \+ \
@@ -66,4 +66,4 @@ $MYDIR/gendnssecrep "$OUTDIR" >"$OUTDIR/dnssec-report-$TODAY.html"
 # Output badkeys results at the end
 cat "$OUTDIR/badkeys.log"
 
-rm -r "$TMPDIR"
+rm -r "$TDIR"
