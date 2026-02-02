@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: 0BSD
 #
 # Fetches and stores DNSKEYs and CDNSKEYs for a hostname.
 # Part of badkeys: https://badkeys.info/

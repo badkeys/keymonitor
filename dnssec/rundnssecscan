@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: 0BSD
 # Part of badkeys: https://badkeys.info/
 
 [ -e ~/.badkeystools ] && . ~/.badkeystools
