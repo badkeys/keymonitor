@@ -19,7 +19,7 @@ with open(f"{args.path}/meta.toml", "rb") as fp:
 scandate = dat["begin"][0:10]
 
 CSSDEFAULT = ("<style>table,td{{border: 1px solid black}}"
-              "table{{margin:auto}}body{{text-align:center}}</style>")
+              "table{{margin:auto}}body{{text-align:center}}</style>\n")
 
 html = f"""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <title>DNSSEC scan {scandate}</title>
