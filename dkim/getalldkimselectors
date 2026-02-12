@@ -1,0 +1,40 @@
+#!/bin/bash
+#
+# SPDX-License-Identifier: 0BSD
+# Part of badkeys: https://badkeys.info/
+set -euo pipefail
+
+[ -e ~/.badkeystools ] && . ~/.badkeystools
+
+if [ -e "$1" ]; then
+	echo "$1 exists"
+	exit 1
+fi
+mkdir "$1"
+
+MYDIR="$(dirname $0)"
+
+# Linux kernel and other lore mailing lists
+"$MYDIR/getdkimselector" \
+	"$DKIM_SELECTOR_SOURCES/lore/maildir" \
+	>"$1/lore.txt"
+
+# Debian Bug Tracking System archive
+"$MYDIR/getdkimselector" -m \
+	"$DKIM_SELECTOR_SOURCES/debianbts/bts-spool-archive" \
+	>"$1/debian-bts-spool-archive.txt"
+
+"$MYDIR/getdkimselector" -m \
+	"$DKIM_SELECTOR_SOURCES/debianbts/bts-spool-db" \
+	>"$1/debian-bts-spool-db.txt"
+
+# IETF mailing lists
+# Note: The IETF rsync module 'concluded-wg-ietf-mail-archive' contains
+#       only old mails without DKIM/Domainkeys signatures
+"$MYDIR/getdkimselector" -m \
+	"$DKIM_SELECTOR_SOURCES/ietf/mailman-archive" \
+	>"$1/ietf-mailman-archive.txt"
+
+"$MYDIR/getdkimselector" -m \
+	"$DKIM_SELECTOR_SOURCES/ietf/everything-ftp/ietf-mail-archive" \
+	>"$1/ietf-ftp-mail-archive.txt"

@@ -1,0 +1,21 @@
+#!/bin/bash
+#
+# SPDX-License-Identifier: 0BSD
+# Part of badkeys: https://badkeys.info/
+set -euo pipefail
+
+MYDIR="$(dirname $0)"
+
+DKIMSELS="$1"
+DOMAINLIST="$2"
+OUTKEYS="$3/keys"
+
+mkdir "$OUTKEYS"
+
+parallel -a "$DKIMSELS" \
+	-n 15 -j 100 --timeout 300 \
+	"$MYDIR/getdkimkey" -o "$OUTKEYS"
+
+parallel -a "$DOMAINLIST" \
+	-n 15 -j 100 --timeout 1800 \
+	"$MYDIR/getdkimkey" -b -s -o "$OUTKEYS"

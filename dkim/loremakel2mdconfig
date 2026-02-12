@@ -1,0 +1,63 @@
+#!/bin/bash
+#
+# SPDX-License-Identifier: 0BSD
+# Part of badkeys: https://badkeys.info/
+#
+# l2md documentation:
+# https://git.kernel.org/pub/scm/linux/kernel/git/dborkman/l2md.git/tree/README
+
+if [ -e l2md-config ]; then
+	echo "l2md-config already exists"
+	exit 1
+fi
+
+[ -e ~/.badkeystools ] && . ~/.badkeystools
+
+OUTDIR="$DKIM_SELECTOR_SOURCES/lore"
+TMPD="$(mktemp -d)"
+
+next=""
+while true; do
+	wget -q -O "$TMPD/loreindex" "https://lore.kernel.org/$next"
+
+	grep -o 'href="[A-Za-z0-9-]*"' "$TMPD/loreindex" |
+		sed -e 's:^href="::g' -e 's:"$::g' \
+			>>"$TMPD/repos.txt"
+
+	next=$(grep 'rel=next' "$TMPD/loreindex" -B1 | head -n1 | sed -e 's:^href="::g' -e 's:"$::g')
+	if [ -z "$next" ]; then
+		break
+	fi
+done
+
+sort -u "$TMPD/repos.txt" >"$TMPD/repos-u.txt"
+
+echo "[general]" >"$TMPD/l2md-config"
+echo "base=$OUTDIR/l2md-data" >>"$TMPD/l2md-config"
+echo "oneshot=1" >>"$TMPD/l2md-config"
+echo "" >>"$TMPD/l2md-config"
+
+for repo in $(cat "$TMPD/repos-u.txt"); do
+	urls=$(wget -O - -q "https://lore.kernel.org/$repo/_/text/mirror/" | grep -o "https://lore.kernel.org/$repo/[0-9]\+" | sort -u)
+	echo "[repo $repo]"
+	echo "maildir=$OUTDIR/maildir/$repo"
+	if [ -z "$urls" ]; then
+		echo "ERROR with $repo"
+		exit 1
+	fi
+	for url in $urls; do
+		echo "url=$url"
+	done
+	echo
+	# Server will stop answering if we query it too fast
+	sleep 3
+done >>"$TMPD/l2md-config"
+
+if cmp --silent "$TMPD/l2md-config" ~/.config/l2md/config; then
+	echo "No changes to ~/.config/l2md/config"
+else
+	cp "$TMPD/l2md-config" "l2md-config"
+	echo "l2md-config contains updates, now copy it to ~/.config/l2md/config"
+fi
+
+rm -r "$TMPD"

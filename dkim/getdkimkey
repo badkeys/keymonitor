@@ -1,0 +1,65 @@
+#!/usr/bin/python3
+#
+# SPDX-License-Identifier: 0BSD
+# Part of badkeys: https://badkeys.info/
+
+import argparse
+import os
+import pathlib
+import secrets
+
+import dns.resolver
+
+selectors = ["default", "dkim", "domk", "google", "k1", "key1", "key2", "mail",
+             "s1", "s2", "selector1", "selector2", "smtp", "x"]
+
+
+def isdkim(rec):
+    for part in rec.split(b";"):
+        if b"=" in part:
+            k, v = part.split(b"=", 1)
+            if k.strip() == b"p" and len(v.strip()) >= 44:
+                return True
+    return False
+
+
+def getkey(host):
+    ofn = f"{args.outdir}/{host}"
+    if os.path.exists(ofn):
+        if args.skipexisting:
+            return
+        ofn += "__" + secrets.token_urlsafe(3)
+    try:
+        rr = dns.resolver.resolve(host, "TXT")
+    except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
+        return
+    except (dns.resolver.NoNameservers, dns.resolver.LifetimeTimeout) as e:
+        if args.debug:
+            print(e)
+        return
+    keycount = 0
+    for rec in rr:
+        krec = b"".join(rec.strings)
+        if not isdkim(krec):
+            continue
+        if keycount > 0:
+            ofn = f"{args.outdir}/{host}__{keycount}"
+        pathlib.Path(ofn).write_bytes(krec + b"\n")
+        keycount += 1
+
+
+ap = argparse.ArgumentParser()
+ap.add_argument("hosts", nargs="+")
+ap.add_argument("-b", "--bruteforce", action="store_true")
+ap.add_argument("-o", "--outdir", default="out-dkim")
+ap.add_argument("--debug", action="store_true")
+ap.add_argument("-s", "--skipexisting", action="store_true", help="Skip if outfile already exists")
+args = ap.parse_args()
+
+for host in args.hosts:
+
+    if args.bruteforce:
+        for sel in selectors:
+            getkey(f"{sel}._domainkey.{host}")
+    else:
+        getkey(host)

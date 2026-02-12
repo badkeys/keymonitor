@@ -1,0 +1,26 @@
+#!/bin/bash
+#
+# SPDX-License-Identifier: 0BSD
+# Part of badkeys: https://badkeys.info/
+set -euo pipefail
+
+[ -e ~/.badkeystools ] && . ~/.badkeystools
+
+if ! grep -q "oneshot=1" ~/.config/l2md/config; then
+	echo "Needs l2md config with 'oneshot=1'"
+	exit 1
+fi
+
+l2md >/dev/null
+
+for RHOST in rsync.ietf.org bugs-mirror.debian.org; do
+
+	OUTDIR="$DKIM_SELECTOR_SOURCES/$RHOST"
+	[ -e "$OUTDIR" ] || mkdir -p "$OUTDIR"
+
+	rsyncmods=$(rsync --list-only rsync://$RHOST | sed -e 's:\t.*::g')
+	for mod in $rsyncmods; do
+		rsync -az --delete "rsync://$RHOST/$mod" "$OUTDIR/$mod"
+	done
+
+done

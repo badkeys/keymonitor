@@ -1,0 +1,49 @@
+#!/bin/bash
+#
+# SPDX-License-Identifier: 0BSD
+# Part of badkeys: https://badkeys.info/
+
+[ -e ~/.badkeystools ] && . ~/.badkeystools
+
+TODAY="$(date -I)"
+MYDIR="$(dirname $0)"
+
+if [ -z "$DNSSEC_MONITOR_OUTDIR" ]; then
+	OUTDIR="$MYDIR/out-$TODAY"
+else
+	OUTDIR="$DKIM_MONITOR_OUTDIR/out-$TODAY"
+fi
+
+if [ -d "$OUTDIR" ]; then
+	echo "$OUTDIR exists already"
+	exit 1
+fi
+mkdir "$OUTDIR"
+
+echo "begin='$(date -Iseconds)'" >>"$OUTDIR/meta.toml"
+
+TDIR=$(mktemp -d)
+TRANCOID=$(curl -s https://tranco-list.eu/top-1m-id)
+echo "trancoid='$TRANCOID'" >>"$OUTDIR/meta.toml"
+curl -s "https://tranco-list.eu/download/daily/tranco_${TRANCOID}-1m.csv.zip" \
+	>"$TDIR/tranco.zip"
+unzip -q -d "$TDIR" "$TDIR/tranco.zip"
+
+sed -e 's:\r$::g' -e 's:^[0-9]*,::g' "$TDIR/top-1m.csv" \
+	>"$TDIR/dom.txt"
+
+"$MYDIR/syncdkimselsources"
+"$MYDIR/getalldkimselectors" "$OUTDIR/dkimselectors"
+sort -u "$OUTDIR"/dkimselectors/* "$DKIM_EXTRASELECTORS"/* \
+	>"$OUTDIR/dkimselectors/_all.txt"
+
+"$MYDIR/collectdkimkeys" "$OUTDIR/dkimselectors/_all.txt" \
+	"$TDIR/dom.txt" "$OUTDIR"
+
+find "$OUTDIR/keys" -type f -exec badkeys --dkim {} \+ \
+	2>"$OUTDIR/badkeys-dkim-errors.log" \
+	1>"$OUTDIR/badkeys-dkim.log"
+
+echo "end='$(date -Iseconds)'" >>"$OUTDIR/meta.toml"
+
+rm -r "$TDIR"
