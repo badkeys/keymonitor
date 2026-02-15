@@ -24,7 +24,14 @@ def isdkim(rec):
 
 
 def getkey(host):
-    ofn = f"{args.outdir}/{host}"
+    if args.splitdir:
+        sdir = host.split("._domainkey.", 1)[-1][0]
+        ofd = f"{args.outdir}/{sdir}"
+    else:
+        ofd = args.outdir
+    if not os.path.exists(ofd):
+        os.makedirs(ofd, exist_ok=True)
+    ofn = f"{ofd}/{host}"
     if os.path.exists(ofn):
         if args.skipexisting:
             return
@@ -54,6 +61,7 @@ ap.add_argument("-b", "--bruteforce", action="store_true")
 ap.add_argument("-o", "--outdir", default="out-dkim")
 ap.add_argument("--debug", action="store_true")
 ap.add_argument("-s", "--skipexisting", action="store_true", help="Skip if outfile already exists")
+ap.add_argument("-S", "--splitdir", action="store_true")
 args = ap.parse_args()
 
 for host in args.hosts:
