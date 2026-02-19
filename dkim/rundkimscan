@@ -40,9 +40,9 @@ sort -u "$OUTDIR"/dkimselectors/* "$DKIM_EXTRASELECTORS"/* \
 "$MYDIR/collectdkimkeys" "$OUTDIR/dkimselectors/_all.txt" \
 	"$TDIR/dom.txt" "$OUTDIR"
 
-find "$OUTDIR/keys" -type f -exec badkeys --dkim {} \+ \
+find "$OUTDIR/keys" -type f -exec badkeys -aj --dkim {} \+ \
 	2>"$OUTDIR/badkeys-dkim-errors.log" \
-	1>"$OUTDIR/badkeys-dkim.log"
+	1>"$OUTDIR/badkeys-dkim-log.json"
 
 echo "end='$(date -Iseconds)'" >>"$OUTDIR/meta.toml"
 
