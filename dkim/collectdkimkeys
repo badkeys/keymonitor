@@ -14,8 +14,8 @@ mkdir "$OUTKEYS"
 
 parallel -a "$DKIMSELS" \
 	-n 15 -j 100 --timeout 300 \
-	"$MYDIR/getdkimkey" -o "$OUTKEYS"
+	"$MYDIR/getdkimkey" -S -o "$OUTKEYS"
 
 parallel -a "$DOMAINLIST" \
 	-n 15 -j 100 --timeout 1800 \
-	"$MYDIR/getdkimkey" -b -s -o "$OUTKEYS"
+	"$MYDIR/getdkimkey" -b -s -S -o "$OUTKEYS"
