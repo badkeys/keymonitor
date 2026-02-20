@@ -40,7 +40,9 @@ def parse_mail(em):
                 continue
             if (dkim["s"] == "") or (dkim["s"].isascii() is False):
                 continue
-            newhost = f"{dkim['s']}._domainkey.{dkim['d']}"
+            # DNS is case insensitive, convert everything to
+            # lowercase for consistency
+            newhost = f"{dkim['s']}._domainkey.{dkim['d']}".lower()
             if newhost not in hosts:
                 hosts.add(newhost)
                 print(newhost)
