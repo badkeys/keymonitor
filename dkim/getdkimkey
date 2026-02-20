@@ -50,7 +50,7 @@ def getkey(host):
         if not isdkim(krec):
             continue
         if keycount > 0:
-            ofn = f"{args.outdir}/{host}__{keycount}"
+            ofn = f"{ofd}/{host}__{keycount}"
         pathlib.Path(ofn).write_bytes(krec + b"\n")
         keycount += 1
 
