@@ -21,9 +21,9 @@ tail -n +2 "$TDIR/top10milliondomains.csv" |
 
 wget -q -O "$STORE/umbrella.zip" https://s3-us-west-1.amazonaws.com/umbrella-static/top-1m.csv.zip
 unzip -o -q -d "$TDIR/" "$STORE/umbrella.zip"
-sed -e 's:\r$::g' -e 's:^[0-9]*,::g' -e 's:^-\.::g' "$TDIR/top-1m.csv" \
-	| grep -v '^-' \
-	>"$TDIR/umbrella.txt"
+sed -e 's:\r$::g' -e 's:^[0-9]*,::g' -e 's:^-\.::g' "$TDIR/top-1m.csv" |
+	grep -v '^-' \
+		>"$TDIR/umbrella.txt"
 
 wget -q -O "$STORE/majestic.csv" https://downloads.majestic.com/majestic_million.csv
 tail -n +2 "$STORE/majestic.csv" |
