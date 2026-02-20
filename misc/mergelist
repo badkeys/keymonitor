@@ -32,7 +32,6 @@ wget -q -O "$STORE/builtwith.zip" https://builtwith.com/dl/builtwith-top1m.zip
 unzip -q -d "$TDIR/" "$STORE/builtwith.zip"
 sed -e 's:\r$::g' -e 's:^[0-9]*,::g' "$TDIR"/builtwith-top1m-*.csv >"$TDIR/builtwith.txt"
 
-
 sort -u "$TDIR"/*.txt >"$STORE/_merge.txt"
 ln -sf "$STORE/_merge.txt" "$MERGELIST_DIR/_merge.txt"
 
