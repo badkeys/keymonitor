@@ -1,0 +1,39 @@
+#!/bin/bash
+set -euo pipefail
+
+. ~/.badkeystools
+
+TDIR=$(mktemp -d)
+TODAY=$(date -I)
+STORE="$MERGELIST_DIR/$TODAY"
+
+mkdir "$STORE"
+
+wget -q -O "$STORE/tranco.zip" https://tranco-list.eu/top-1m.csv.zip
+unzip -q -d "$TDIR" "$STORE/tranco.zip"
+sed -e 's:\r$::g' -e 's:^[0-9]*,::g' "$TDIR/top-1m.csv" >"$TDIR/tranco.txt"
+
+wget -q -O "$STORE/domcop.zip" https://www.domcop.com/files/top/top10milliondomains.csv.zip
+unzip -q -d "$TDIR" "$STORE/domcop.zip"
+tail -n +2 "$TDIR/top10milliondomains.csv" |
+	sed -e 's:^"[0-9]*","::g' -e 's:".*::g' \
+		>"$TDIR/domcop.txt"
+
+wget -q -O "$STORE/umbrella.zip" https://s3-us-west-1.amazonaws.com/umbrella-static/top-1m.csv.zip
+unzip -o -q -d "$TDIR/" "$STORE/umbrella.zip"
+sed -e 's:\r$::g' -e 's:^[0-9]*,::g' "$TDIR/top-1m.csv" >"$TDIR/umbrella.txt"
+
+wget -q -O "$STORE/majestic.csv" https://downloads.majestic.com/majestic_million.csv
+tail -n +2 "$STORE/majestic.csv" |
+	sed -e 's:^[0-9]\+,[0-9]\+,::g' -e 's:,.*::g' >"$TDIR/majestic.txt"
+zstd -q --rm "$STORE/majestic.csv"
+
+wget -q -O "$STORE/builtwith.zip" https://builtwith.com/dl/builtwith-top1m.zip
+unzip -q -d "$TDIR/" "$STORE/builtwith.zip"
+sed -e 's:\r$::g' -e 's:^[0-9]*,::g' "$TDIR"/builtwith-top1m-*.csv >"$TDIR/builtwith.txt"
+
+
+sort -u "$TDIR"/*.txt >"$STORE/_merge.txt"
+ln -sf "$STORE/_merge.txt" "$MERGELIST_DIR/_merge.txt"
+
+rm -r "$TDIR"
