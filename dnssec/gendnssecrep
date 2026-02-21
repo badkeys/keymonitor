@@ -33,7 +33,7 @@ else:
 html += "</head><body><main>"
 html += f"<h1>badkeys DNSSEC scan {scandate}</h1>"
 
-html += f"<tr><td>Scan start:</td><td>{dat['begin']}</td></tr>\n"
+html += f"<table><tr><td>Scan start:</td><td>{dat['begin']}</td></tr>\n"
 html += f"<tr><td>Scan end:</td><td>{dat['end']}</td></tr></table>\n"
 
 html += "<h2>Vulnerable keys</h2>\n"
