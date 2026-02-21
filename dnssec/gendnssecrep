@@ -48,7 +48,7 @@ for x in bklog.strip().split("\n"):
     results[vuln] += 1
 
 for k in sorted(results, key=results.get, reverse=True):
-    html += f"<tr><td>{results[k]}</td><td>{k}</td></tr>\n"
+    html += f"<tr><td>{k}</td><td>{results[k]}</td></tr>\n"
 
 html += "</table>"
 
@@ -80,8 +80,8 @@ for _, _, names in os.walk(f"{args.path}/keys/"):
 allkeys = sum(ktypes.values())
 
 for k in sorted(ktypes, key=ktypes.get, reverse=True):
-    html += f"<tr><td>{ktypes[k]}</td><td>{k}</td></tr>\n"
-html += f"<tr><td>{allkeys}</td><td>All</td></tr>\n"
+    html += f"<tr><td>{k}</td><td>{ktypes[k]}</td></tr>\n"
+html += f"<tr><td>All</td><td>{allkeys}</td></tr>\n"
 html += "</table>"
 
 html += "<p><em>Created with <a href='https://badkeys.info/'>badkeys</a></em></p>\n"
