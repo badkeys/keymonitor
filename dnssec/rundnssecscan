@@ -38,7 +38,7 @@ echo "errors=$(wc -l <$OUTDIR/badkeys-errors.log)" >>"$OUTDIR/meta.toml"
 
 echo "end='$(date -Iseconds)'" >>"$OUTDIR/meta.toml"
 
-$MYDIR/gendnssecrep "$OUTDIR" >"$OUTDIR/$TODAY-dnssec-badkeys.html"
+$MYDIR/gendnssecrep --css "/css/bk.css" "$OUTDIR" >"$OUTDIR/$TODAY-dnssec-badkeys.html"
 
 # Output badkeys results at the end
 cat "$OUTDIR/badkeys.log"
