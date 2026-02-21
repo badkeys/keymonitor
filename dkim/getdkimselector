@@ -7,6 +7,7 @@ import argparse
 import email.parser
 import mailbox
 import os
+import re
 
 allheaders = [
     "DKIM-Signature",
@@ -16,6 +17,8 @@ allheaders = [
     "X-Original-DKIM-Signature",
     "DomainKey-Signature",
 ]
+
+rehostchar = re.compile(r"^[0-9a-zA-Z._-]+$")
 
 
 def parse_mail(em):
@@ -38,7 +41,8 @@ def parse_mail(em):
             if ("d" not in dkim) or ("s" not in dkim):
                 # looks invalid
                 continue
-            if (dkim["s"] == "") or (dkim["s"].isascii() is False):
+            if not (rehostchar.match(dkim["s"])
+               and rehostchar.match(dkim["d"])):
                 continue
             # DNS is case insensitive, convert everything to
             # lowercase for consistency
