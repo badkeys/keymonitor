@@ -81,7 +81,7 @@ allkeys = sum(ktypes.values())
 
 for k in sorted(ktypes, key=ktypes.get, reverse=True):
     html += f"<tr><td>{ktypes[k]}</td><td>{k}</td></tr>\n"
-html += f"<tr><td>All</td><td>{allkeys}</td></tr>\n"
+html += f"<tr><td>{allkeys}</td><td>All</td></tr>\n"
 html += "</table>"
 
 html += "<p><em>Created with <a href='https://badkeys.info/'>badkeys</a></em></p>\n"
