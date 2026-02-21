@@ -77,8 +77,11 @@ for _, _, names in os.walk(f"{args.path}/keys/"):
             ktypes[ktype] = 0
         ktypes[ktype] += 1
 
+allkeys = sum(ktypes.values())
+
 for k in sorted(ktypes, key=ktypes.get, reverse=True):
     html += f"<tr><td>{ktypes[k]}</td><td>{k}</td></tr>\n"
+html += f"<tr><td>All</td><td>{allkeys}</td></tr>\n"
 html += "</table>"
 
 html += "<p><em>Created with <a href='https://badkeys.info/'>badkeys</a></em></p>\n"
