@@ -23,32 +23,7 @@ echo "begin='$(date -Iseconds)'" >>"$OUTDIR/meta.toml"
 
 TDIR=$(mktemp -d)
 
-if [ -z "$USE_DOMCOP" ]; then
-	# by default use the Tranco Top 1 Million list
-	LISTNAME="tranco"
-	echo "toplist='Tranco'" >>"$OUTDIR/meta.toml"
-	TRANCOID=$(curl -s https://tranco-list.eu/top-1m-id)
-	echo "trancoid='$TRANCOID'" >>"$OUTDIR/meta.toml"
-
-	TURL="https://tranco-list.eu/download/daily/tranco_${TRANCOID}-1m.csv.zip"
-	curl -s "$TURL" \
-		>"$TDIR/tranco.zip"
-
-	unzip -q -d "$TDIR" "$TDIR/tranco.zip"
-
-	sed -e 's:\r$::g' -e 's:^[0-9]*,::g' "$TDIR/top-1m.csv" \
-		>"$TDIR/dom.txt"
-else
-	LISTNAME="domcop"
-	echo "toplist='DomCop'" >>"$OUTDIR/meta.toml"
-	curl -s https://www.domcop.com/files/top/top10milliondomains.csv.zip \
-		>"$TDIR/top10milliondomains.csv.zip"
-	unzip -q -d "$TDIR" "$TDIR/top10milliondomains.csv.zip"
-
-	tail -n +2 "$TDIR/top10milliondomains.csv" |
-		sed -e 's:^"[0-9]*","::g' -e 's:".*::g' \
-			>"$TDIR/dom.txt"
-fi
+ln -s "$MERGELIST_DIR/_merge.txt" "$TDIR/dom.txt"
 
 mkdir "$OUTDIR/keys"
 parallel -a "$TDIR/dom.txt" -n 15 -j 100 --timeout 300 \
@@ -63,7 +38,7 @@ echo "errors=$(wc -l <$OUTDIR/badkeys-errors.log)" >>"$OUTDIR/meta.toml"
 
 echo "end='$(date -Iseconds)'" >>"$OUTDIR/meta.toml"
 
-$MYDIR/gendnssecrep "$OUTDIR" >"$OUTDIR/$TODAY-dnssec-badkeys-$LISTNAME.html"
+$MYDIR/gendnssecrep "$OUTDIR" >"$OUTDIR/$TODAY-dnssec-badkeys.html"
 
 # Output badkeys results at the end
 cat "$OUTDIR/badkeys.log"
