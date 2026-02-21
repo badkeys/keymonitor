@@ -1,0 +1,89 @@
+#!/usr/bin/python3
+#
+# SPDX-License-Identifier: 0BSD
+# Part of badkeys: https://badkeys.info/
+
+import argparse
+import json
+import sys
+import tomllib
+
+ap = argparse.ArgumentParser()
+ap.add_argument("datapath")
+ap.add_argument("--css")
+args = ap.parse_args()
+
+with open(f"{args.datapath}/meta.toml", "rb") as fp:
+    dat = tomllib.load(fp)
+
+scandate = dat["begin"][0:10]
+
+CSSDEFAULT = ("<style>table,td{border: 1px solid black}"
+              "table{margin:auto}body{text-align:center}</style>\n")
+
+html = f"""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<title>DKIM scan {scandate}</title>
+"""
+
+if args.css:
+    html += f'<link rel="stylesheet" href="{args.css}">\n'
+else:
+    html += CSSDEFAULT
+
+html += "</head><body><main>\n"
+html += f"<h1>badkeys DKIM scan {scandate}</h1>\n"
+html += f"<table><tr><td>Scan start:</td><td>{dat['begin']}</td></tr>\n"
+html += f"<tr><td>Scan end:</td><td>{dat['end']}</td></tr></table>\n"
+
+keystats = {}
+vulnstats = {}
+privleak = 0
+parseerr = 0
+with open(f"{args.datapath}/badkeys-dkim-log.json") as f:
+    for line in f:
+        keydat = json.loads(line)
+        if keydat["type"] == "ec":
+            tstr = "Ed25519"
+        elif keydat["type"] == "rsa":
+            tstr = f"RSA ({keydat['bits']})"
+        elif keydat["type"] in ["unparseable", "notfound"]:
+            parseerr += 1
+            if "reason" in keydat and keydat["reason"] == "privleak":
+                privleak += 1
+            continue
+        else:
+            sys.exit(f"ERROR: Unexpected key type {keydat['type']}")
+        if tstr not in keystats:
+            keystats[tstr] = 0
+        keystats[tstr] += 1
+        for vuln, vdat in keydat["results"].items():
+            vstr = vuln
+            if "subtest" in vdat:
+                vstr += f"/{vdat['subtest']}"
+            if vstr not in vulnstats:
+                vulnstats[vstr] = 0
+            vulnstats[vstr] += 1
+
+vulnstats = dict(sorted(vulnstats.items(), key=lambda item: item[1], reverse=True))
+keystats = dict(sorted(keystats.items(), key=lambda item: item[1], reverse=True))
+
+allkeys = sum(keystats.values())
+
+html += "<h2>Vulnerabilities</h2>\n<table>\n"
+for vt, vn in vulnstats.items():
+    html += f"<tr><td>{vt}</td><td>{vn}</td></tr>\n"
+html += "</table>\n"
+
+html += f"<p>{privleak} DKIM records contained a private key.</p>\n"
+html += f"<p>{parseerr} DKIM records could not be parsed.</p>\n"
+
+html += "<h2>Key stats</h2>\n<table>\n"
+for kt, kn in keystats.items():
+    html += f"<tr><td>{kt}</td><td>{kn}</td></tr>\n"
+html += f"<tr><td>All</td><td>{allkeys}</td></tr>\n"
+html += "</table>\n"
+
+html += "<p><em>Created with <a href='https://badkeys.info/'>badkeys</a></em></p>\n"
+html += "</main></body></html>\n"
+
+print(html, end="")
