@@ -4,6 +4,7 @@
 # Part of badkeys: https://badkeys.info/
 
 import argparse
+import http.client
 import json
 import pathlib
 import urllib
@@ -48,9 +49,11 @@ def parsesectxt(rawdata):
 def getsecuritytxt(hostname):
     sectxturl = f"https://{hostname}/.well-known/security.txt"
     try:
-        with urllib.request.urlopen(sectxturl) as u:
+        with urllib.request.urlopen(sectxturl, timeout=5) as u:
             sectxt = u.read()
-    except (urllib.error.HTTPError, urllib.error.URLError):
+    except (urllib.error.HTTPError, urllib.error.URLError,
+            TimeoutError, http.client.RemoteDisconnected,
+            ConnectionResetError):
         return None
 
     return parsesectxt(sectxt)
