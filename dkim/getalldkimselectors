@@ -21,20 +21,20 @@ MYDIR="$(dirname $0)"
 
 # Debian Bug Tracking System archive
 "$MYDIR/getdkimselector" -m \
-	"$DKIM_SELECTOR_SOURCES/debianbts/bts-spool-archive" \
+	"$DKIM_SELECTOR_SOURCES/bugs-mirror.debian.org/bts-spool-archive" \
 	>"$1/debian-bts-spool-archive.txt"
 
 "$MYDIR/getdkimselector" -m \
-	"$DKIM_SELECTOR_SOURCES/debianbts/bts-spool-db" \
+	"$DKIM_SELECTOR_SOURCES/bugs-mirror.debian.org/bts-spool-db" \
 	>"$1/debian-bts-spool-db.txt"
 
 # IETF mailing lists
 # Note: The IETF rsync module 'concluded-wg-ietf-mail-archive' contains
 #       only old mails without DKIM/Domainkeys signatures
 "$MYDIR/getdkimselector" -m \
-	"$DKIM_SELECTOR_SOURCES/ietf/mailman-archive" \
+	"$DKIM_SELECTOR_SOURCES/rsync.ietf.org/mailman-archive" \
 	>"$1/ietf-mailman-archive.txt"
 
 "$MYDIR/getdkimselector" -m \
-	"$DKIM_SELECTOR_SOURCES/ietf/everything-ftp/ietf-mail-archive" \
+	"$DKIM_SELECTOR_SOURCES/rsync.ietf.org/everything-ftp/ietf-mail-archive" \
 	>"$1/ietf-ftp-mail-archive.txt"
