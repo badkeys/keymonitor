@@ -41,7 +41,7 @@ def getkey(host):
     except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
         return
     except (dns.resolver.NoNameservers, dns.resolver.LifetimeTimeout,
-            dns.name.NameTooLong) as e:
+            dns.name.NameTooLong, dns.name.EmptyLabel) as e:
         if args.debug:
             print(e)
         return
