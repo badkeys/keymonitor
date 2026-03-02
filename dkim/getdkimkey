@@ -40,7 +40,8 @@ def getkey(host):
         rr = dns.resolver.resolve(host, "TXT")
     except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
         return
-    except (dns.resolver.NoNameservers, dns.resolver.LifetimeTimeout) as e:
+    except (dns.resolver.NoNameservers, dns.resolver.LifetimeTimeout,
+            dns.name.NameTooLong) as e:
         if args.debug:
             print(e)
         return
