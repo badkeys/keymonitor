@@ -25,19 +25,17 @@ def isdkim(rec):
 
 def getkey(host):
     if args.prefix:
-        sdir = host.split("._domainkey.", 1)[-1][0]
+        sdir = host.split("._domainkey.", 1)[-1][0:2]
         ofd = f"{args.outdir}/{sdir}"
     else:
         ofd = args.outdir
-    if not os.path.exists(ofd):
-        os.makedirs(ofd, exist_ok=True)
     ofn = f"{ofd}/{host}"
     if os.path.exists(ofn):
         if args.skipexisting:
             return
         ofn += "__" + secrets.token_urlsafe(3)
     try:
-        rr = dns.resolver.resolve(host, "TXT")
+        rr = dns.resolver.resolve(host, "TXT", lifetime=2)
     except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
         return
     except (dns.resolver.NoNameservers, dns.resolver.LifetimeTimeout,
@@ -50,6 +48,8 @@ def getkey(host):
         krec = b"".join(rec.strings)
         if not isdkim(krec):
             continue
+        if not os.path.exists(ofd):
+            os.makedirs(ofd, exist_ok=True)
         if keycount > 0:
             ofn = f"{ofd}/{host}__{keycount}"
         pathlib.Path(ofn).write_bytes(krec + b"\n")
