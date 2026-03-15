@@ -60,7 +60,7 @@ for logdir in args.dirs:
                                           footer=bkconfig["DISCLOSURE_FOOTER"])
 
         msg = email.message.EmailMessage()
-        msg.set_content(mailcontent)
+        msg.set_content(mailcontent, cte='quoted-printable')
         msg["Subject"] = f"Insecure DNSSEC key configured for {hostname}"
         msg["To"] = ", ".join(emails)
         msg["From"] = bkconfig["DISCLOSURE_FROM"]
