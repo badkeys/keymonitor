@@ -26,7 +26,7 @@ TDIR=$(mktemp -d)
 ln -s "$MERGELIST_DIR/_merge.txt" "$TDIR/dom.txt"
 
 mkdir "$OUTDIR/keys"
-parallel -a "$TDIR/dom.txt" -n 15 -j 100 --timeout 300 \
+parallel -a "$TDIR/dom.txt" -n 15 -j 100 --timeout 300 -u \
 	"$MYDIR/getdnskeys" -p -o "$OUTDIR/keys"
 
 find "$OUTDIR/keys" -type f -exec badkeys --dnssec {} \+ \
