@@ -24,6 +24,9 @@ def parsesectxt(rawdata):
         sectxt = rawdata.decode("utf-8").strip().split("\n")
     except UnicodeDecodeError:
         return None
+    if sectxt[0].lower().startswith(("<html", "<!doctype")):
+        # Skip parsing if content looks like HTML file
+        return None
     dat = {}
     for line in sectxt:
         if line.startswith("#") or line.strip() == "":
