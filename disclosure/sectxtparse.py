@@ -4,6 +4,7 @@
 # Part of badkeys: https://badkeys.info/
 
 import argparse
+import functools
 import http.client
 import json
 import pathlib
@@ -62,6 +63,7 @@ def getsecuritytxt(hostname):
     return parsesectxt(sectxt)
 
 
+@functools.cache
 def getreportingemails(hostname):
     emails = []
     sectxt = getsecuritytxt(hostname)
