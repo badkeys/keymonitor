@@ -38,7 +38,6 @@ for logdir in args.dirs:
         el = line.split(" ")
         vuln = el[0]
         keyfp = el[-1].split("/keys/")[-1]
-        # FIXME: make sure hostname contains no unusual chars
         hostname = keyfp.split("_")[0].split("/")[-1]
 
         emails = sectxtparse.getreportingemails(hostname)
