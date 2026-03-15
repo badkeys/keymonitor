@@ -11,7 +11,7 @@ import pathlib
 import urllib
 import urllib.request
 
-DEBUG = True
+DEBUG = False
 
 
 def _debugmsg(msg):
