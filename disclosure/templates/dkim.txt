@@ -1,0 +1,13 @@
+Dear Sir or Madam,
+
+I would like to report a security issue in your DKIM E-Mail setup.
+
+{{content}}
+
+You should replace the key(s) and remove the affected DNS record(s).
+
+This vulnerability was discovered with badkeys: https://badkeys.info/
+
+Yours faithfully,
+--
+{{footer}}

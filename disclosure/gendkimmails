@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+#
+# SPDX-License-Identifier: 0BSD
+# Part of badkeys: https://badkeys.info/
+
+import argparse
+import email.message
+import json
+import os
+import pathlib
+import sys
+import tomllib
+
+import badkeys
+import jinja2
+from sectxtparse import getreportingemails
+
+msgs = {
+    "blocklist/debianssl": """
+Key(s) created with an OpenSSL version vulnerable to the Debian
+OpenSSL bug (CVE-2008-0166): https://badkeys.info/docs/debian.html
+""",
+    "blocklist/git": """
+The private key was found in a public Git repository:
+https://badkeys.info/docs/publicprivate.html
+""",
+    "blocklist/pkg": """
+The private key is part of a software package:
+https://badkeys.info/docs/publicprivate.html
+""",
+    "blocklist/softwaretests": """
+The private key is part of a software package:
+https://badkeys.info/docs/publicprivate.html
+""",
+    "blocklist/rfc": """
+The private key is an example key in an IETF RFC or draft:
+https://badkeys.info/docs/publicprivate.html
+""",
+    "smallfactors/valid": """
+The RSA key has a small prime factor, the private key can be trivially
+recovered.
+""",
+    "privleak": """
+The DKIM record contains a private key instead of a public key.
+""",
+    "smallrsa": """
+The RSA key has a key size of 512 bits or less. Such keys can be attacked
+within hours on a modern computer: https://badkeys.info/docs/keysize.html
+"""
+}
+
+if __name__ == "__main__":
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument("logfile")
+    ap.add_argument("-d", "--debug", action="store_true")
+    ap.add_argument("--store", help="Store intermediate JSON data")
+    ap.add_argument("--load", help="Load intermediate JSON data")
+    ap.add_argument("-o", "--outdir", default="mails-dkim")
+    args = ap.parse_args()
+
+    with open(os.path.expanduser("~/.badkeystools"), "rb") as fp:
+        bkconfig = tomllib.load(fp)
+
+    if not args.store and os.path.exists(args.outdir):
+        sys.exit(f"Output directory {args.outdir} already exists!")
+
+    issues = {}
+    if args.load:
+        jissues = pathlib.Path(args.load).read_text()
+        issues = json.loads(jissues)
+    else:
+        with open(args.logfile) as f:
+            for line in f:
+                kdata = json.loads(line)
+                if ("smallfactors" in kdata["results"]
+                   and kdata["results"]["smallfactors"]["subtest"] == "corrupt"):
+                    # ignore corrupt RSA keys
+                    continue
+                issuetype = None
+                if kdata["type"] == "rsa" and kdata["bits"] <= 512:
+                    issuetype = "smallrsa"
+                    keyid = "smallrsa"
+                if kdata["type"] == "unparseable" and kdata["reason"] == "privleak":
+                    issuetype = "privleak"
+                    keyid = "privleak"
+                if kdata["results"]:
+                    if len(kdata["results"]) > 1:
+                        print(f"NOTE: More than 1 result for {kdata['where']}")
+                    issuetype = next(iter(kdata["results"]))
+                    if "subtest" in kdata["results"][issuetype]:
+                        issuetype += "/" + \
+                            kdata["results"][issuetype]["subtest"]
+                    keyid = kdata["spkisha256"]
+                if not issuetype:
+                    continue
+
+                # data structure:
+                # {[repemail]: {
+                #   [issuetype]: {
+                #     [keyid]: [
+                #       ...,
+                hostname = kdata["where"].split(
+                    "._domainkey.")[-1].split("[")[0]
+                repemail = ",".join(getreportingemails(hostname))
+                if repemail not in issues:
+                    issues[repemail] = {}
+                if issuetype not in issues[repemail]:
+                    issues[repemail][issuetype] = {}
+                if keyid not in issues[repemail][issuetype]:
+                    issues[repemail][issuetype][keyid] = []
+                issues[repemail][issuetype][keyid].append(kdata)
+
+    if args.store:
+        pathlib.Path(args.store).write_text(json.dumps(issues))
+        sys.exit(1)
+
+    os.mkdir(args.outdir)
+
+    tp = os.path.join(os.path.dirname(__file__), "templates/dkim.txt")
+    rawtemplate = pathlib.Path(tp).read_text()
+    mailtemplate = jinja2.Template(rawtemplate)
+
+    for emailaddress, issuedata in issues.items():
+
+        content = ""
+        mainrec = None
+        for issuetype, keys in issuedata.items():
+            for key in keys.values():
+                hostnames = []
+                for hv in key:
+                    hostnames.append(hv["where"].split("/")[-1].split("[")[0])
+                if not mainrec:
+                    mainrec = hostnames[0]
+                content += "Affected DKIM key(s):\n"
+                content += "\n".join(hostnames) + "\n"
+                if issuetype in msgs:
+                    content += "\nVulnerability type:" + msgs[issuetype] + "\n"
+                else:
+                    print(f"WARNING: no description for {issuetype}")
+                    content += issuetype
+
+                if issuetype.startswith("blocklist/"):
+                    content += "You can find the private key here:\n"
+                    blid = key[0]["results"]["blocklist"]["blid"]
+                    lookup = key[0]["results"]["blocklist"]["lookup"]
+                    _, keyurl = badkeys.allkeys.urllookup(blid, lookup)
+                    content += f"{keyurl}\n"
+
+                if issuetype == "smallfactors/valid":
+                    p = int(key[0]["results"]["smallfactors"]["p"], 16)
+                    q = int(key[0]["results"]["smallfactors"]["q"], 16)
+                    e = int(key[0]["e"], 16)
+                    n = int(key[0]["n"], 16)
+                    privatekey = badkeys.rsakeys.rsarecover(p=p, q=q, n=n, e=e)
+                    content += f"The private key is:\n{privatekey}\n"
+
+        mailcontent = mailtemplate.render(
+            content=content, footer=bkconfig["DISCLOSURE_FOOTER"])
+
+        msg = email.message.EmailMessage()
+        msg.set_content(mailcontent, cte="quoted-printable")
+        msg["Subject"] = f"Insecure DKIM key at {mainrec}"
+        msg["To"] = emailaddress
+        msg["From"] = bkconfig["DISCLOSURE_FROM"]
+        if "DISCLOSURE_CC" in bkconfig:
+            msg["Cc"] = bkconfig["DISCLOSURE_CC"]
+        fp = os.path.join(args.outdir, emailaddress)
+        pathlib.Path(fp).write_text(str(msg))
