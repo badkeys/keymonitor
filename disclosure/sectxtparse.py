@@ -75,7 +75,7 @@ def getreportingemails(hostname):
             up = urllib.parse.urlparse(contact)
             if up.scheme == "mailto":
                 # fixme check query fragment params empty
-                emails.append(up.path)
+                emails.append(up.path.strip())
     if emails:
         _debugmsg("security.txt mail contact(s) found")
     else:
