@@ -50,4 +50,6 @@ find "$OUTDIR/keys" -type f -exec badkeys -aj --dkim {} \+ \
 
 echo "end='$(date -Iseconds)'" >>"$OUTDIR/meta.toml"
 
+"$MYDIR/gendkimrep" --css "/css/bk.css" "$OUTDIR" >"$OUTDIR/$TODAY-dkim-badkeys.html"
+
 rm -r "$TDIR"
