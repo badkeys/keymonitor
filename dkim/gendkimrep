@@ -5,6 +5,7 @@
 
 import argparse
 import json
+import operator
 import sys
 import tomllib
 
@@ -46,7 +47,7 @@ with open(f"{args.datapath}/badkeys-dkim-log.json") as f:
             tstr = "Ed25519"
         elif keydat["type"] == "rsa":
             tstr = f"RSA ({keydat['bits']})"
-        elif keydat["type"] in ["unparseable", "notfound"]:
+        elif keydat["type"] in {"unparseable", "notfound"}:
             parseerr += 1
             if "reason" in keydat and keydat["reason"] == "privleak":
                 privleak += 1
@@ -64,8 +65,8 @@ with open(f"{args.datapath}/badkeys-dkim-log.json") as f:
                 vulnstats[vstr] = 0
             vulnstats[vstr] += 1
 
-vulnstats = dict(sorted(vulnstats.items(), key=lambda item: item[1], reverse=True))
-keystats = dict(sorted(keystats.items(), key=lambda item: item[1], reverse=True))
+vulnstats = dict(sorted(vulnstats.items(), key=operator.itemgetter(1), reverse=True))
+keystats = dict(sorted(keystats.items(), key=operator.itemgetter(1), reverse=True))
 
 allkeys = sum(keystats.values())
 
